@@ -77,7 +77,15 @@ export default function HLSPlayer({ channel }: Props) {
     const { default: Hls } = await import('hls.js');
 
     if (Hls.isSupported()) {
-      const hls = new Hls({ debug: false, enableWorker: true, lowLatencyMode: true });
+      const mobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+      const hls = new Hls({
+        debug: false,
+        enableWorker: !mobile,
+        lowLatencyMode: !mobile,
+        maxBufferLength: mobile ? 10 : 30,
+        maxMaxBufferLength: mobile ? 20 : 60,
+        maxBufferSize: mobile ? 10 * 1000 * 1000 : 60 * 1000 * 1000,
+      });
       hlsRef.current = hls;
       hls.loadSource(channel.url);
       hls.attachMedia(video);

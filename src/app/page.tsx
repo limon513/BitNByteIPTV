@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Channel } from '@/types/channel';
 import { useChannels } from '@/hooks/useChannels';
 import { useStreamChecker } from '@/hooks/useStreamChecker';
@@ -13,6 +13,9 @@ import PlayerPlaceholder from '@/components/Player/PlayerPlaceholder';
 import Footer from '@/components/Footer';
 import { RefreshCw, Tv2 } from 'lucide-react';
 
+const MOBILE_CHANNEL_LIMIT = 80;
+const DESKTOP_CHANNEL_LIMIT = 200;
+
 export default function HomePage() {
   const {
     channels, allChannels, loading, error,
@@ -23,17 +26,37 @@ export default function HomePage() {
   } = useChannels();
 
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
-  useStreamChecker(allChannels, updateStatus);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMore, setShowMore] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check, { passive: true });
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Default to Bangladesh category on mobile for a shorter initial list
+  useEffect(() => {
+    if (isMobile && category === 'all') setCategory('bangladesh');
+  }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Stream checker disabled on mobile — too CPU/RAM intensive for low-end devices
+  useStreamChecker(allChannels, updateStatus, !isMobile);
 
   const liveCount = allChannels.filter((c) => c.status === 'online').length;
 
   function handleSelect(ch: Channel) {
     setActiveChannel(ch);
-    // On mobile scroll to top so player is visible
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (isMobile) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // Reset "show more" whenever the filter changes so we don't show excess channels
+  useEffect(() => { setShowMore(false); }, [category, search, showOnlineOnly]);
+
+  const limit = isMobile ? MOBILE_CHANNEL_LIMIT : DESKTOP_CHANNEL_LIMIT;
+  const visibleChannels = showMore ? channels : channels.slice(0, limit);
+  const hasMore = channels.length > limit && !showMore;
 
   return (
     <div className="flex flex-col overflow-hidden h-full" style={{ background: 'var(--bg-0)' }}>
@@ -57,7 +80,7 @@ export default function HomePage() {
           }}
         >
           <Sidebar
-            channels={channels}
+            channels={visibleChannels}
             allChannels={allChannels}
             loading={loading}
             error={error}
@@ -68,6 +91,8 @@ export default function HomePage() {
             activeId={activeChannel?.id ?? null}
             onSelect={handleSelect}
             onReload={reload}
+            hasMore={hasMore}
+            onShowMore={() => setShowMore(true)}
           />
         </aside>
 
@@ -178,7 +203,7 @@ export default function HomePage() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2">
-                {!loading && !error && channels.map((ch) => (
+                {!loading && !error && visibleChannels.map((ch) => (
                   <ChannelCard
                     key={ch.id}
                     channel={ch}
@@ -187,6 +212,18 @@ export default function HomePage() {
                   />
                 ))}
               </div>
+
+              {hasMore && !loading && !error && (
+                <div className="flex justify-center py-4">
+                  <button
+                    onClick={() => setShowMore(true)}
+                    className="btn-glass"
+                    style={{ padding: '8px 20px', fontSize: 12, fontWeight: 600 }}
+                  >
+                    Show {channels.length - limit} more channels
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           {/* ── end mobile channel browser ── */}

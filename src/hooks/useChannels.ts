@@ -6,7 +6,7 @@ import { parseM3U, deduplicateChannels } from '@/lib/m3u-parser';
 import { SourceKey, PINNED_CHANNELS } from '@/lib/sources';
 import { CATEGORY_KEYWORDS } from '@/lib/sources';
 
-const SOURCES: SourceKey[] = ['bangladesh', 'sports', 'india', 'pakistan'];
+const SOURCES: SourceKey[] = ['bangladesh', 'sports'];
 
 async function fetchPlaylist(source: SourceKey): Promise<Channel[]> {
   const res = await fetch(`/api/channels?source=${source}`);

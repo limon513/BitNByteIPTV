@@ -17,12 +17,14 @@ interface Props {
   activeId: string | null;
   onSelect: (ch: Channel) => void;
   onReload: () => void;
+  hasMore?: boolean;
+  onShowMore?: () => void;
 }
 
 export default function Sidebar({
   channels, allChannels, loading, error,
   category, onCategory, showOnlineOnly, onToggleOnlineOnly,
-  activeId, onSelect, onReload,
+  activeId, onSelect, onReload, hasMore, onShowMore,
 }: Props) {
   const liveCount = allChannels.filter((c) => c.status === 'online').length;
   const total     = allChannels.length;
@@ -131,6 +133,18 @@ export default function Sidebar({
             onClick={() => onSelect(ch)}
           />
         ))}
+
+        {hasMore && !loading && !error && (
+          <div className="flex justify-center py-3 px-3">
+            <button
+              onClick={onShowMore}
+              className="w-full btn-glass"
+              style={{ padding: '7px 12px', fontSize: 11, fontWeight: 600 }}
+            >
+              Load more channels
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
