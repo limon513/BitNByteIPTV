@@ -1,32 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { M3U_SOURCES, SourceKey } from '@/lib/sources';
 
 export const runtime = 'edge';
 
-export async function GET(req: NextRequest) {
-  const source = req.nextUrl.searchParams.get('source') as SourceKey | null;
-
-  if (!source || !(source in M3U_SOURCES)) {
-    return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
-  }
-
-  const url = M3U_SOURCES[source];
-
+export async function GET(req: Request) {
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BitNByte-TV/1.0)',
-      },
-      // Cloudflare edge cache — tells CF to cache this at the edge for 1 hour
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...(typeof (globalThis as any).caches !== 'undefined'
-        ? { cf: { cacheTtl: 3600, cacheEverything: true } }
-        : {}),
+    /* Use native URL — more compatible with Cloudflare Workers than req.nextUrl */
+    const { searchParams } = new URL(req.url);
+    const source = searchParams.get('source') as SourceKey | null;
+
+    if (!source || !(source in M3U_SOURCES)) {
+      return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
+    }
+
+    const upstream = M3U_SOURCES[source];
+
+    const res = await fetch(upstream, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BitNByte-TV/1.0)' },
     });
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: `Upstream returned ${res.status}` },
+        { error: `Upstream error ${res.status}` },
         { status: 502 }
       );
     }
@@ -41,7 +36,8 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[channels] fetch error:', err);
-    return NextResponse.json({ error: 'Fetch failed' }, { status: 500 });
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[channels]', detail);
+    return NextResponse.json({ error: 'Fetch failed', detail }, { status: 500 });
   }
 }
