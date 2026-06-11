@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Channel, CategoryId } from '@/types/channel';
 import { parseM3U, deduplicateChannels } from '@/lib/m3u-parser';
-import { SourceKey } from '@/lib/sources';
+import { SourceKey, PINNED_CHANNELS } from '@/lib/sources';
 import { CATEGORY_KEYWORDS } from '@/lib/sources';
 
 const SOURCES: SourceKey[] = ['bangladesh', 'sports', 'india', 'pakistan'];
@@ -43,7 +43,7 @@ export function useChannels() {
     setError(null);
     try {
       const results = await Promise.allSettled(SOURCES.map(fetchPlaylist));
-      const merged: Channel[] = [];
+      const merged: Channel[] = [...PINNED_CHANNELS];
       for (const r of results) {
         if (r.status === 'fulfilled') merged.push(...r.value);
       }
