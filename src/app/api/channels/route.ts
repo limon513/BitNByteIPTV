@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { M3U_SOURCES, SourceKey } from '@/lib/sources';
 
 export const runtime = 'edge';
-export const revalidate = 3600;
 
 export async function GET(req: NextRequest) {
   const source = req.nextUrl.searchParams.get('source') as SourceKey | null;
@@ -15,12 +14,21 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-        next: { revalidate: 3600 },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BitNByte-TV/1.0)',
+      },
+      // Cloudflare edge cache — tells CF to cache this at the edge for 1 hour
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(typeof (globalThis as any).caches !== 'undefined'
+        ? { cf: { cacheTtl: 3600, cacheEverything: true } }
+        : {}),
     });
 
     if (!res.ok) {
-      return NextResponse.json({ error: 'Upstream error' }, { status: 502 });
+      return NextResponse.json(
+        { error: `Upstream returned ${res.status}` },
+        { status: 502 }
+      );
     }
 
     const text = await res.text();
@@ -32,7 +40,8 @@ export async function GET(req: NextRequest) {
         'Access-Control-Allow-Origin': '*',
       },
     });
-  } catch {
+  } catch (err) {
+    console.error('[channels] fetch error:', err);
     return NextResponse.json({ error: 'Fetch failed' }, { status: 500 });
   }
 }
