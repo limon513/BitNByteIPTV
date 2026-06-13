@@ -18,7 +18,7 @@ export function parseM3U(content: string, defaultCountry = ''): Channel[] {
 
       meta = { name, logo, group, tvgId, country };
     } else if (line.startsWith('http') && meta) {
-      const id = `${meta.tvgId || meta.name}-${Math.random().toString(36).slice(2, 7)}`;
+      const id = line; // URL is stable across reloads — used as the canonical channel ID
       channels.push({
         id,
         name: meta.name!,
