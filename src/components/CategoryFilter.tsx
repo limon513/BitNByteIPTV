@@ -2,13 +2,15 @@
 
 import {
   Layers, Trophy, Target, CircleDot, Zap,
-  Flag, Newspaper, Film, Music2, Wifi,
+  Flag, Newspaper, Film, Music2, Wifi, Globe2, Pin,
 } from 'lucide-react';
 import { CategoryId } from '@/types/channel';
 import type { LucideIcon } from 'lucide-react';
 
-const CATEGORIES: { id: CategoryId; label: string; icon: LucideIcon }[] = [
+const CATEGORIES: { id: CategoryId; label: string; icon: LucideIcon; hot?: boolean }[] = [
   { id: 'all',           label: 'All',          icon: Layers    },
+  { id: 'pinned',        label: 'Pinned',       icon: Pin       },
+  { id: 'worldcup',      label: 'World Cup',    icon: Globe2,   hot: true },
   { id: 'sports',        label: 'Sports',        icon: Trophy    },
   { id: 'cricket',       label: 'Cricket',       icon: Target    },
   { id: 'football',      label: 'Football',      icon: CircleDot },
@@ -51,7 +53,7 @@ export default function CategoryFilter({
               onClick={() => onChange(cat.id)}
               className="flex items-center gap-3 w-full px-4 py-2 text-xs font-medium transition-all duration-150"
               style={{
-                borderLeft: `2px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+                borderLeft: `2px solid ${isActive ? (cat.hot ? 'var(--accent-2)' : 'var(--accent)') : 'transparent'}`,
                 background: isActive ? 'var(--bg-active)' : 'transparent',
                 color: isActive ? 'var(--text-0)' : 'var(--text-1)',
               }}
@@ -60,9 +62,17 @@ export default function CategoryFilter({
             >
               <Icon
                 size={13}
-                style={{ color: isActive ? 'var(--accent)' : 'var(--text-2)', flexShrink: 0 }}
+                style={{ color: isActive ? (cat.hot ? 'var(--accent-2)' : 'var(--accent)') : 'var(--text-2)', flexShrink: 0 }}
               />
               {cat.label}
+              {cat.hot && (
+                <span
+                  className="live-dot"
+                  style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 'auto', padding: '1px 5px', fontSize: 8, fontWeight: 800, letterSpacing: '0.08em', background: 'var(--live-bg)', border: '1px solid var(--live-border)', borderRadius: 3, color: 'var(--live)' }}
+                >
+                  LIVE
+                </span>
+              )}
             </button>
           );
         })}
@@ -99,6 +109,7 @@ export default function CategoryFilter({
       {CATEGORIES.map((cat) => {
         const Icon = cat.icon;
         const isActive = active === cat.id;
+        const hotGradient = 'linear-gradient(135deg, var(--accent-2) 0%, #f97316 100%)';
         return (
           <button
             key={cat.id}
@@ -108,15 +119,18 @@ export default function CategoryFilter({
               padding: '6px 12px',
               borderRadius: 'var(--radius-sm)',
               fontSize: 11,
-              background: isActive ? 'var(--accent-gradient)' : 'var(--glass)',
-              border: `1px solid ${isActive ? 'transparent' : 'var(--glass-border)'}`,
-              color: isActive ? '#fff' : 'var(--text-1)',
+              background: isActive ? (cat.hot ? hotGradient : 'var(--accent-gradient)') : (cat.hot ? 'rgba(249,115,22,0.08)' : 'var(--glass)'),
+              border: `1px solid ${isActive ? 'transparent' : (cat.hot ? 'rgba(249,115,22,0.25)' : 'var(--glass-border)')}`,
+              color: isActive ? '#fff' : (cat.hot ? '#fb923c' : 'var(--text-1)'),
               boxShadow: isActive ? '0 2px 12px var(--accent-glow)' : 'none',
               transform: isActive ? 'translateY(-1px)' : 'none',
             }}
           >
             <Icon size={11} strokeWidth={2.5} />
             {cat.label}
+            {cat.hot && !isActive && (
+              <span className="live-dot" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--live)', flexShrink: 0 }} />
+            )}
           </button>
         );
       })}

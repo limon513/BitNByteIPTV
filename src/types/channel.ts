@@ -13,6 +13,8 @@ export interface Channel {
 
 export type CategoryId =
   | 'all'
+  | 'pinned'
+  | 'worldcup'
   | 'sports'
   | 'cricket'
   | 'football'

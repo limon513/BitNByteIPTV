@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Channel } from '@/types/channel';
 import { useChannels } from '@/hooks/useChannels';
 import { useStreamChecker } from '@/hooks/useStreamChecker';
+import { usePinnedChannels } from '@/hooks/usePinnedChannels';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import CategoryFilter from '@/components/CategoryFilter';
@@ -17,13 +18,15 @@ const MOBILE_CHANNEL_LIMIT = 80;
 const DESKTOP_CHANNEL_LIMIT = 200;
 
 export default function HomePage() {
+  const { isPinned, togglePin, pinned: pinnedIds } = usePinnedChannels();
+
   const {
     channels, allChannels, loading, error,
     search, setSearch,
     category, setCategory,
     showOnlineOnly, setShowOnlineOnly,
     updateStatus, reload,
-  } = useChannels();
+  } = useChannels(pinnedIds);
 
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -93,6 +96,8 @@ export default function HomePage() {
             onReload={reload}
             hasMore={hasMore}
             onShowMore={() => setShowMore(true)}
+            isPinned={isPinned}
+            onTogglePin={togglePin}
           />
         </aside>
 
@@ -208,6 +213,8 @@ export default function HomePage() {
                     key={ch.id}
                     channel={ch}
                     isActive={ch.id === activeChannel?.id}
+                    isPinned={isPinned(ch.id)}
+                    onTogglePin={() => togglePin(ch.id)}
                     onClick={() => handleSelect(ch)}
                   />
                 ))}

@@ -19,12 +19,14 @@ interface Props {
   onReload: () => void;
   hasMore?: boolean;
   onShowMore?: () => void;
+  isPinned: (id: string) => boolean;
+  onTogglePin: (id: string) => void;
 }
 
 export default function Sidebar({
   channels, allChannels, loading, error,
   category, onCategory, showOnlineOnly, onToggleOnlineOnly,
-  activeId, onSelect, onReload, hasMore, onShowMore,
+  activeId, onSelect, onReload, hasMore, onShowMore, isPinned, onTogglePin,
 }: Props) {
   const liveCount = allChannels.filter((c) => c.status === 'online').length;
   const total     = allChannels.length;
@@ -130,6 +132,8 @@ export default function Sidebar({
             key={ch.id}
             channel={ch}
             isActive={ch.id === activeId}
+            isPinned={isPinned(ch.id)}
+            onTogglePin={() => onTogglePin(ch.id)}
             onClick={() => onSelect(ch)}
           />
         ))}

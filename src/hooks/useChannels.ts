@@ -21,8 +21,9 @@ async function fetchPlaylist(source: SourceKey): Promise<Channel[]> {
   return parseM3U(text, countryMap[source]);
 }
 
-function matchesCategory(ch: Channel, category: CategoryId): boolean {
+function matchesCategory(ch: Channel, category: CategoryId, pinned?: Set<string>): boolean {
   if (category === 'all') return true;
+  if (category === 'pinned') return pinned ? pinned.has(ch.id) : false;
   const haystack = `${ch.name} ${ch.group}`.toLowerCase();
   if (category === 'bangladesh') return ch.country === 'BD';
   const keywords = CATEGORY_KEYWORDS[category];
@@ -30,7 +31,7 @@ function matchesCategory(ch: Channel, category: CategoryId): boolean {
   return false;
 }
 
-export function useChannels() {
+export function useChannels(pinnedIds?: Set<string>) {
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export function useChannels() {
       const q = search.toLowerCase();
       if (!ch.name.toLowerCase().includes(q) && !ch.group.toLowerCase().includes(q)) return false;
     }
-    return matchesCategory(ch, category);
+    return matchesCategory(ch, category, pinnedIds);
   });
 
   return {
